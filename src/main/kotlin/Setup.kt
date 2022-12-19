@@ -4,7 +4,7 @@ import java.awt.Desktop
 import java.io.File
 import java.net.URI
 
-private const val DAY = 16
+private const val DAY = 17
 private val dotenv = dotenv()
 
 fun main() {
@@ -43,7 +43,7 @@ private fun getStubCode() = """
     }
 
     private fun dayDAYpart2(lines: List<String>) {
-
+        
     }
 """.trimIndent().replace("DAY", DAY.toString())
 
