@@ -18,8 +18,9 @@ dependencies {
     }
     implementation("com.github.jkcclemens:khttp:0.1.0")
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 }
 
-tasks.withType<KotlinCompile>() {
+tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
