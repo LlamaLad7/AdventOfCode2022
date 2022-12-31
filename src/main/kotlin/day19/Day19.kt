@@ -4,8 +4,6 @@ package day19
 
 import getInput
 import kotlinx.coroutines.*
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
 
 fun main() {
@@ -58,7 +56,7 @@ private fun mostGeodes(blueprint: Blueprint, time: Int, materials: Resources, ro
     }
     // Consider building each type of robot next
     // Geode
-    if (robots.ore > 0 && robots.obsidian > 0) {
+    if (robots.obsidian > 0) {
         val oreNeeded = (blueprint.geodeRobot.ore - materials.ore).coerceAtLeast(0)
         val obsidianNeeded = (blueprint.geodeRobot.obsidian - materials.obsidian).coerceAtLeast(0)
         val turnsNeeded = maxOf(ceil(oreNeeded.toFloat() / robots.ore), ceil(obsidianNeeded.toFloat() / robots.obsidian)).toInt() + 1
@@ -74,7 +72,7 @@ private fun mostGeodes(blueprint: Blueprint, time: Int, materials: Resources, ro
         }
     }
     // Obsidian
-    if (robots.ore > 0 && robots.clay > 0 && robots.obsidian < blueprint.geodeRobot.obsidian) {
+    if (robots.clay > 0 && robots.obsidian < blueprint.geodeRobot.obsidian) {
         val oreNeeded = (blueprint.obsidianRobot.ore - materials.ore).coerceAtLeast(0)
         val clayNeeded = (blueprint.obsidianRobot.clay - materials.clay).coerceAtLeast(0)
         val turnsNeeded = maxOf(ceil(oreNeeded.toFloat() / robots.ore), ceil(clayNeeded.toFloat() / robots.clay)).toInt() + 1
@@ -90,7 +88,7 @@ private fun mostGeodes(blueprint: Blueprint, time: Int, materials: Resources, ro
         }
     }
     // Clay
-    if (robots.ore > 0 && robots.clay < blueprint.obsidianRobot.clay) {
+    if (robots.clay < blueprint.obsidianRobot.clay) {
         val oreNeeded = (blueprint.clayRobot.ore - materials.ore).coerceAtLeast(0)
         val turnsNeeded = ceil(oreNeeded.toFloat() / robots.ore).toInt() + 1
         if (timeLeft > turnsNeeded) {
@@ -105,7 +103,7 @@ private fun mostGeodes(blueprint: Blueprint, time: Int, materials: Resources, ro
         }
     }
     // Ore
-    if (robots.ore in 0..blueprint.maxOre) {
+    if (robots.ore < blueprint.maxOre) {
         val oreNeeded = (blueprint.oreRobot.ore - materials.ore).coerceAtLeast(0)
         val turnsNeeded = ceil(oreNeeded.toFloat() / robots.ore).toInt() + 1
         if (timeLeft > turnsNeeded) {
@@ -157,11 +155,11 @@ private data class Resources(val ore: Int = 0, val clay: Int = 0, val obsidian: 
 
 private data class Blueprint(val id: Int, val oreRobot: Resources, val clayRobot: Resources, val obsidianRobot: Resources, val geodeRobot: Resources) {
     private var best = Int.MIN_VALUE
-    val maxOre = maxOf(oreRobot.ore, clayRobot.ore, obsidianRobot.ore, geodeRobot.ore)
+    val maxOre = maxOf(clayRobot.ore, obsidianRobot.ore, geodeRobot.ore)
 
     fun offerBest(newBest: Int) {
         if (newBest > best) {
-            println("[${LocalDateTime.now().format(DateTimeFormatter.ISO_TIME)}] New best of $newBest for blueprint $id")
+            println("New best of $newBest for blueprint $id")
             best = newBest
         }
     }
