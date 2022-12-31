@@ -1,3 +1,5 @@
+@file:OptIn(DelicateCoroutinesApi::class)
+
 package day19
 
 import getInput
@@ -18,7 +20,7 @@ private fun day19part1(lines: List<String>) {
     val blueprints = parseInput(lines)
     val results = mutableListOf<Deferred<Int>>()
     for (blueprint in blueprints) {
-        results.add(GlobalScope.async { mostGeodesBetter(blueprint, 0, Resources(), Resources(ore = 1)) * blueprint.id })
+        results.add(GlobalScope.async { mostGeodes(blueprint, 0, Resources(), Resources(ore = 1)) * blueprint.id })
     }
     runBlocking {
         println(results.awaitAll().sum())
@@ -30,7 +32,7 @@ private fun day19part2(lines: List<String>) {
     val blueprints = parseInput(lines).take(3)
     val results = mutableListOf<Deferred<Int>>()
     for (blueprint in blueprints) {
-        results.add(GlobalScope.async { mostGeodesBetter(blueprint, 0, Resources(), Resources(ore = 1)) })
+        results.add(GlobalScope.async { mostGeodes(blueprint, 0, Resources(), Resources(ore = 1)) })
     }
     runBlocking {
         println(results.awaitAll().reduce(Int::times))
@@ -39,7 +41,7 @@ private fun day19part2(lines: List<String>) {
 
 private var END_TIME = -1
 
-private fun mostGeodesBetter(blueprint: Blueprint, time: Int, materials: Resources, robots: Resources): Int {
+private fun mostGeodes(blueprint: Blueprint, time: Int, materials: Resources, robots: Resources): Int {
     if (time == END_TIME) {
         blueprint.offerBest(materials.geodes)
         return materials.geodes
@@ -62,7 +64,7 @@ private fun mostGeodesBetter(blueprint: Blueprint, time: Int, materials: Resourc
         val turnsNeeded = maxOf(ceil(oreNeeded.toFloat() / robots.ore), ceil(obsidianNeeded.toFloat() / robots.obsidian)).toInt() + 1
         if (timeLeft > turnsNeeded) {
             best = maxOf(
-                best, mostGeodesBetter(
+                best, mostGeodes(
                     blueprint,
                     time + turnsNeeded,
                     materials + robots * turnsNeeded - blueprint.geodeRobot,
@@ -78,7 +80,7 @@ private fun mostGeodesBetter(blueprint: Blueprint, time: Int, materials: Resourc
         val turnsNeeded = maxOf(ceil(oreNeeded.toFloat() / robots.ore), ceil(clayNeeded.toFloat() / robots.clay)).toInt() + 1
         if (timeLeft > turnsNeeded) {
             best = maxOf(
-                best, mostGeodesBetter(
+                best, mostGeodes(
                     blueprint,
                     time + turnsNeeded,
                     materials + robots * turnsNeeded - blueprint.obsidianRobot,
@@ -93,7 +95,7 @@ private fun mostGeodesBetter(blueprint: Blueprint, time: Int, materials: Resourc
         val turnsNeeded = ceil(oreNeeded.toFloat() / robots.ore).toInt() + 1
         if (timeLeft > turnsNeeded) {
             best = maxOf(
-                best, mostGeodesBetter(
+                best, mostGeodes(
                     blueprint,
                     time + turnsNeeded,
                     materials + robots * turnsNeeded - blueprint.clayRobot,
@@ -108,7 +110,7 @@ private fun mostGeodesBetter(blueprint: Blueprint, time: Int, materials: Resourc
         val turnsNeeded = ceil(oreNeeded.toFloat() / robots.ore).toInt() + 1
         if (timeLeft > turnsNeeded) {
             best = maxOf(
-                best, mostGeodesBetter(
+                best, mostGeodes(
                     blueprint,
                     time + turnsNeeded,
                     materials + robots * turnsNeeded - blueprint.oreRobot,
@@ -119,81 +121,6 @@ private fun mostGeodesBetter(blueprint: Blueprint, time: Int, materials: Resourc
     }
     blueprint.offerBest(best)
     return best
-}
-
-//private fun mostGeodesNaive(blueprint: Blueprint, time: Int, materials: Resources, robots: Resources): Int {
-//    return cache.getOrPut(Triple(time, materials, robots)) {
-//        if (time == END_TIME) {
-//            if (materials.geodes > maxGeodes) {
-//                maxGeodes = materials.geodes
-//                println("Got $maxGeodes geodes!")
-//            }
-//            return@getOrPut materials.geodes
-//        }
-//        val nextStates = mutableListOf(materials to robots)
-//        if (materials >= blueprint.geodeRobot) {
-//            nextStates.add(materials - blueprint.geodeRobot to robots.copy(geodes = robots.geodes + 1))
-//        }
-//        if (materials >= blueprint.obsidianRobot) {
-//            nextStates.add(materials - blueprint.obsidianRobot to robots.copy(obsidian = robots.obsidian + 1))
-//        }
-//        if (materials >= blueprint.clayRobot) {
-//            nextStates.add(materials - blueprint.clayRobot to robots.copy(clay = robots.clay + 1))
-//        }
-//        if (materials >= blueprint.oreRobot) {
-//            nextStates.add(materials - blueprint.oreRobot to robots.copy(ore = robots.ore + 1))
-//        }
-//        return@getOrPut nextStates.maxOf { (newMaterials, newRobots) ->
-//            mostGeodesNaive(blueprint, time + 1, newMaterials + robots, newRobots)
-//        }
-//    }
-//}
-
-private fun mostGeodesBfs(blueprint: Blueprint): Int {
-    val start = State(Resources(), Resources(ore = 1))
-    val seen = hashSetOf(start)
-    val q = ArrayDeque(listOf(0 to start))
-    var best = Int.MIN_VALUE
-    var maxTime = Int.MIN_VALUE
-    while (q.isNotEmpty()) {
-        val (time, state) = q.removeFirst()
-        if (time > maxTime) {
-            println("Reached time $time")
-            maxTime = time
-        }
-        if (time == END_TIME) {
-            best = maxOf(best, state.materials.geodes)
-            continue
-        }
-        for (connection in state.getConnectedStates(blueprint)) {
-            if (seen.add(connection)) {
-                q.add(time + 1 to connection)
-            }
-        }
-    }
-    return best
-}
-
-private data class State(val materials: Resources, val robots: Resources) {
-    fun getConnectedStates(blueprint: Blueprint): List<State> {
-        val nextStates = mutableListOf(this)
-        if (materials.ore > 20) {
-            nextStates.clear()
-        }
-        if (materials >= blueprint.geodeRobot) {
-            nextStates.add(State(materials - blueprint.geodeRobot, robots.copy(geodes = robots.geodes + 1)))
-        }
-        if (materials >= blueprint.obsidianRobot) {
-            nextStates.add(State(materials - blueprint.obsidianRobot, robots.copy(obsidian = robots.obsidian + 1)))
-        }
-        if (materials >= blueprint.clayRobot) {
-            nextStates.add(State(materials - blueprint.clayRobot, robots.copy(clay = robots.clay + 1)))
-        }
-        if (materials >= blueprint.oreRobot) {
-            nextStates.add(State(materials - blueprint.oreRobot, robots.copy(ore = robots.ore + 1)))
-        }
-        return nextStates.map { it.copy(materials = it.materials + robots) }
-    }
 }
 
 private fun parseInput(lines: List<String>): List<Blueprint> {
